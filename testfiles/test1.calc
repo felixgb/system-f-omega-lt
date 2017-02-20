@@ -1,0 +1,5 @@
+id = \X :: *. \x: X. x;
+
+cBool = forall X :: * . X -> X -> X;
+
+main = \Y :: *. \y: Y. id [Y] y
