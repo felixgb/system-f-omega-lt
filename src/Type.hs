@@ -22,7 +22,10 @@ ty term ctx kctx = case term of
         return (t1 `TyArr` t2)
 
     (App t1 t2) -> do
-        (TyArr t11 t12) <- ty t1 ctx kctx
+        -- error $ show $ ty t1 ctx kctx
+        -- (TyArr t11 t12) <- ty t1 ctx kctx
+        hmmm <- ty t1 ctx kctx
+        let (TyArr t11 t12) = lol hmmm ctx
         ty2 <- ty t2 ctx kctx
         unless (ty2 == t11) (throwError $ WrongType ty2 t11)
         return t12
@@ -33,8 +36,18 @@ ty term ctx kctx = case term of
         return $ Forall var kn bodyTy
 
     (TyApp t1 argTy) -> do
-        (Forall var kn ty2) <- ty t1 ctx kctx
+        -- error (show $ ty t1 ctx kctx)
+        (Forall var kn ty2) <- ty t1 ctx kctx >>= simplify ctx
         (tyK, _) <- kind argTy kctx
         unless (tyK == kn) (throwError $ WrongKind tyK kn)
         return $ apply (Subst $ Map.singleton var argTy) ty2
+
+    other -> error (show other)
+
+lol ok@(TyArr t11 t12) ctx  = ok
+lol other ctx = error $ show other ++ show ctx
+
+simplify :: TyCtx -> Type -> ThrowsError Type
+simplify ctx (TyVar name) = ctxLookup name ctx
+simplify _ other = return other
 

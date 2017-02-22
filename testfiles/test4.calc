@@ -1,0 +1,3 @@
+doubleInt = (\X::*. \f:X -> X. \a:X. f (f a)) [Int];
+
+main = doubleInt

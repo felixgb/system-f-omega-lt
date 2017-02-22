@@ -15,7 +15,11 @@ $alpha = [a-zA-Z]
 tokens :-
     $white+             ;
     "--".*              ;
+    "Int"               { \s -> TkTyInt }
     forall              { \s -> TkForall }
+    "0"                 { \s -> TkInt (read s) }
+    [1-9][$digit]*      { \s -> TkInt (read s) }
+    \.                  { \s -> TkDot }
     \.                  { \s -> TkDot }
     \\                  { \s -> TkLam }
     \=                  { \s -> TkDef }
@@ -39,6 +43,8 @@ data Token
     | TkDef
     | TkVar String
     | TkTyVar String
+    | TkInt Int
+    | TkTyInt
     | TkTyAscribe
     | TkKnAscribe
     | TkArrow

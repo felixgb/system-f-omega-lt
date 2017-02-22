@@ -36,6 +36,7 @@ executable system-f-omega-lt-exe
   build-depends:       base
                      , system-f-omega-lt
                      , mtl
+                     , containers
   default-language:    Haskell2010
 
 test-suite system-f-omega-lt-test

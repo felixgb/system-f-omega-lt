@@ -18,12 +18,20 @@ main = do
         (Right res) -> print res
         (Left err) -> print err
 
-getMain :: [(String, Term)] -> ThrowsError Term
+getMain :: [(String, Either Type Term)] -> ThrowsError (Either Type Term)
 getMain ctx = case lookup "main" ctx of
     (Just main) -> return main
     Nothing -> throwError NoMain
 
+run :: [(String, Either Type Term)] -> ThrowsError Type
 run defs = do
-    tyDefs <- foldrM (\(x, t) map -> ty t map emptyCtx >>= \tyI -> return $ ctxInsert x tyI map) emptyCtx defs
-    main <- getMain defs
-    ty main tyDefs emptyCtx
+    tyDefs <- foldrM (\(x, t) ctx -> tyIfNotAlready t ctx >>= \tyI -> return $ ctxInsert x tyI ctx) emptyCtx defs
+    mn <- getMain defs
+    case mn of
+        (Right trm) -> ty trm tyDefs emptyCtx
+        (Left typ) -> return typ
+
+tyIfNotAlready :: Either Type Term -> TyCtx -> ThrowsError Type
+tyIfNotAlready (Right term) ctx = ty term ctx (Map.singleton "CBool" $ KnStar)
+tyIfNotAlready (Left typ) _ = return typ
+    

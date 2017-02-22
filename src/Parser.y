@@ -17,6 +17,8 @@ import Syntax
     '\\'        { TkLam }
     '='         { TkDef }
     var         { TkVar $$ }
+    int         { TkInt $$ }
+    tyInt       { TkTyInt }
     tyVar       { TkTyVar $$ }
     ':'         { TkTyAscribe }
     '::'        { TkKnAscribe }
@@ -30,13 +32,15 @@ import Syntax
 
 %%
 
-Defn :: { [(String, Term)] }
+Defn :: { [(String, Either Type Term)] }
 Defn : Def                              { [$1] }
      | Defn ';' Def                     { $3 : $1 }
 
-Def : var '=' Term                      { ($1, $3) }
+Def : var '=' Term                      { ($1, Right $3) }
+    | tyVar '=' Type                    { ($1, Left $3) }
 
 Term : '\\' var ':' Type '.' Term       { Lam $2 $4 $6 emptyCtx }
+     | int                              { Lit $1 }
      | Term Term                        { App $1 $2 }
      | '\\' tyVar '::' Kind '.' Term    { TyLam $2 $4 $6 emptyCtx }
      | Term '[' Type ']'                { TyApp $1 $3 }
@@ -44,6 +48,7 @@ Term : '\\' var ':' Type '.' Term       { Lam $2 $4 $6 emptyCtx }
      | var                              { Var $1 }
 
 Type : tyVar                            { TyVar $1 }
+     | tyInt                            { TyInt }
      | Type '->' Type                   { TyArr $1 $3 }
      | forall tyVar '::' Kind '.' Type  { Forall $2 $4 $6 }
      | '\\' tyVar '::' Kind '.' Type    { OpLam $2 $4 $6 emptyCtx }
@@ -62,6 +67,6 @@ parseTerm = parse . scan
 parseType :: String -> Type
 parseType = parseT . scan
 
-parseDefs :: String -> [(String, Term)]
+parseDefs :: String -> [(String, Either Type Term )]
 parseDefs = parseD . scan
 }

@@ -44,6 +44,8 @@ instance Eq Type where
     (TyArr t11 t12) == (TyArr t21 t22) = t11 == t21 && t12 == t22
     (Forall v1 k1 t1) == (Forall v2 k2 t2) = v1 == v2 && k1 == k2 && t1 == t2
     (OpApp t11 t12) == (OpApp t21 t22) = t11 == t21 && t12 == t22
+    TyInt == TyInt = True
+    _ == _ = False
 
 data Kind
     = KnStar
