@@ -32,6 +32,7 @@ import Syntax
     ')'         { TkRParen }
     ';'         { TkSemi }
 
+%right APP
 %%
 
 Defn :: { [(String, Either Type Term)] }
@@ -42,12 +43,16 @@ Def : var '=' Term                      { ($1, Right $3) }
     | tyVar '=' Type                    { ($1, Left $3) }
 
 Term : '\\' var ':' Type '.' Term       { Lam $2 $4 $6 Map.empty }
-     | int                              { Lit $1 }
-     | Term Term                        { App $1 $2 }
+     | Juxt                             { $1 }
      | '\\' tyVar '::' Kind '.' Term    { TyLam $2 $4 $6 Map.empty }
+
+Juxt : Juxt Atom                        { App $1 $2 }
      | Term '[' Type ']'                { TyApp $1 $3 }
-     | '(' Term ')'                     { $2 }
+     | Atom                             { $1 }
+
+Atom : '(' Term ')'                     { $2 }
      | var                              { Var $1 }
+     | int                              { Lit $1 }
 
 Type : tyVar                            { TyVar $1 }
      | tyInt                            { TyInt }

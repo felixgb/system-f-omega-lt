@@ -30,20 +30,17 @@ ty term = case term of
         return $ TyArr t1 bodyTy
 
     (App t1 t2) -> do
-        -- (t11, t12) <- ty t1 >>= simplify >>= lift . getTyArr
-        ret <- fresh
-        ty1 <- ty t1
+        (t11, t12) <- ty t1 >>= lift . getTyArr
         ty2 <- ty t2
-        tell [(ty1, TyArr ty2 ret)]
-        -- unless (ty2 == t11) (throwError $ WrongType ty2 t11)
-        return ret
+        areEq <- ty2 `tyEq` t11
+        unless areEq (throwError $ WrongType ty2 t11)
+        return t12
 
     (TyLam var kn body clos) -> do
         t <- local (insertKind var kn) (ty body)
         return $ Forall var kn t
 
     (TyApp t1 argTy) -> do
-        -- Add constraits?
         (var, kn, ty2) <- ty t1 >>= simplify >>= lift . getForall
         tyK <- kind argTy
         unless (tyK == kn) (throwError $ WrongKind tyK kn)
@@ -53,3 +50,9 @@ simplify :: Type -> Typing Type
 simplify (TyVar name) = ask >>= lift . tyLookup name
 simplify other = return other
 
+tyEq :: Type -> Type -> Typing Bool
+tyEq fa@(Forall v1 k1 t1) (TyVar name) = do
+    env <- ask
+    r <- lift $ tyLookup name env
+    return (r == fa)
+tyEq a b = return $ a == b

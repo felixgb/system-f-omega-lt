@@ -1,0 +1,7 @@
+CNat = forall X::*. (X -> X) -> X -> X;
+
+czero = \X::*. \s:X -> X. \z:X. z;
+
+csucc = \n:CNat. \X::*. \s:X -> X. \z:X. s (n [X] s z);
+
+main = csucc czero

@@ -6,4 +6,4 @@ fls = \X::*. \t:X. \f:X. f;
 
 not = \b:forall X::*. X -> X -> X. \X::*. \t:X. \f:X. b [X] f t;
 
-main = not
+main = not tru
