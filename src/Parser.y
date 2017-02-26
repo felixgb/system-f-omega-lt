@@ -1,6 +1,8 @@
 {
 module Parser where
 
+import qualified Data.Map.Strict as Map
+
 import Lexer
 import Syntax
 }
@@ -39,10 +41,10 @@ Defn : Def                              { [$1] }
 Def : var '=' Term                      { ($1, Right $3) }
     | tyVar '=' Type                    { ($1, Left $3) }
 
-Term : '\\' var ':' Type '.' Term       { Lam $2 $4 $6 emptyCtx }
+Term : '\\' var ':' Type '.' Term       { Lam $2 $4 $6 Map.empty }
      | int                              { Lit $1 }
      | Term Term                        { App $1 $2 }
-     | '\\' tyVar '::' Kind '.' Term    { TyLam $2 $4 $6 emptyCtx }
+     | '\\' tyVar '::' Kind '.' Term    { TyLam $2 $4 $6 Map.empty }
      | Term '[' Type ']'                { TyApp $1 $3 }
      | '(' Term ')'                     { $2 }
      | var                              { Var $1 }
@@ -51,7 +53,7 @@ Type : tyVar                            { TyVar $1 }
      | tyInt                            { TyInt }
      | Type '->' Type                   { TyArr $1 $3 }
      | forall tyVar '::' Kind '.' Type  { Forall $2 $4 $6 }
-     | '\\' tyVar '::' Kind '.' Type    { OpLam $2 $4 $6 emptyCtx }
+     | '\\' tyVar '::' Kind '.' Type    { OpLam $2 $4 $6 Map.empty }
      | Type Type                        { OpApp $1 $2 }
      | '(' Type ')'                     { $2 }
 

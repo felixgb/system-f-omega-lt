@@ -1,37 +1,40 @@
 module Kind where
 
 import Control.Monad.Except
+import Control.Monad.Reader
 
 import Syntax
 
 type KnCtx = Ctx Kind
 
-isKnStar :: Type -> KnCtx -> ThrowsError ()
-isKnStar ty ctx = kind ty ctx >>= \(k, _) -> unless (k == KnStar) (throwError $ WrongKind KnStar k)
+getKnArr :: Kind -> ThrowsError (Kind, Kind)
+getKnArr (KnArr k1 k2) = return (k1, k2)
+getKnArr k = throwError $ NotKnArr k
 
-kind :: Type -> KnCtx -> ThrowsError (Kind, KnCtx)
-kind ty ctx = case ty of
-    TyInt -> return (KnStar, ctx)
+isKnStar :: Type -> Typing ()
+isKnStar ty = kind ty >>= \k -> unless (k == KnStar) (throwError $ WrongKind KnStar k)
 
-    (TyVar x) -> ctxLookup x ctx >>= \k -> return (k, ctx)
+kind :: Type -> Typing Kind
+kind ty = case ty of
+    TyInt -> return KnStar
 
-    (TyArr t1 t2) -> do
-        isKnStar t1 ctx
-        isKnStar t2 ctx
-        return (KnStar, ctx)
+    (TyVar x) -> ask >>= lift . knLookup x
 
-    (Forall var kn t1) -> do
-        let newCtx = ctxInsert var kn ctx
-        isKnStar t1 newCtx
-        return (KnStar, ctx)
+    (TyArr t1 t2) -> 
+        isKnStar t1 >>
+        isKnStar t2 >>
+        return KnStar
 
-    (OpLam var kn t1 clos) -> do
-        let newCtx = ctxInsert var kn ctx
-        (k2, _) <- kind t1 newCtx
-        return $ (KnArr kn k2, ctx)
+    (Forall var kn t1) ->
+        local (insertKind var kn) (isKnStar t1) >>
+        return KnStar
+
+    (OpLam var kn t1 clos) ->
+        local (insertKind var kn) (kind t1) >>=
+        return . KnArr kn
 
     (OpApp t1 t2) -> do
-        ((KnArr k11 k12), _) <- kind t1 ctx
-        (k2, _) <- kind t2 ctx
+        (k11, k12) <- kind t1 >>= lift . getKnArr
+        k2 <- kind t2
         unless (k2 == k11) (throwError $ WrongKind k2 k11)
-        return (k12, ctx)
+        return k12

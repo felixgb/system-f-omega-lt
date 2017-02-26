@@ -1,3 +1,1 @@
-thing = \Y::*. \b:Y. \X::*. \f:X. b [X];
-
-main = thing
+main = \Y::*. \b:Y. \X::*. \f:X. b [X]

@@ -3,51 +3,49 @@ module Type where
 import qualified Data.Map.Strict as Map
 
 import Control.Monad.Except
+import Control.Monad.Reader
 
 import Kind
 import Syntax
 
 type TyCtx = Ctx Type
 
-ty :: Term -> TyCtx -> KnCtx -> ThrowsError Type
-ty term ctx kctx = case term of
+getTyArr :: Type -> ThrowsError (Type, Type)
+getTyArr (TyArr t1 t2) = return (t1, t2)
+getTyArr t = throwError $ NotTyArr t
+
+getForall :: Type -> ThrowsError (String, Kind, Type)
+getForall (Forall var kn ty) = return (var, kn, ty)
+getForall t = throwError $ NotForall t
+
+ty :: Term -> Typing Type
+ty term = case term of
     (Lit n) -> return TyInt
 
-    (Var name) -> ctxLookup name ctx 
+    (Var name) -> ask >>= lift . tyLookup name
 
-    (Lam var t1 body clos) -> do
-        isKnStar t1 kctx
-        let newCtx = ctxInsert var t1 ctx
-        t2 <- ty body newCtx kctx
-        return (t1 `TyArr` t2)
+    (Lam var t1 body clos) ->
+        isKnStar t1 >>
+        local (insertType var t1) (ty body) >>=
+        return . TyArr t1
 
     (App t1 t2) -> do
-        -- error $ show $ ty t1 ctx kctx
-        -- (TyArr t11 t12) <- ty t1 ctx kctx
-        hmmm <- ty t1 ctx kctx
-        let (TyArr t11 t12) = lol hmmm ctx
-        ty2 <- ty t2 ctx kctx
+        (t11, t12) <- ty t1 >>= simplify >>= lift . getTyArr
+        ty2 <- ty t2
         unless (ty2 == t11) (throwError $ WrongType ty2 t11)
         return t12
 
-    (TyLam var kn body clos) -> do
-        let newKctx = ctxInsert var kn kctx
-        bodyTy <- ty body ctx newKctx
-        return $ Forall var kn bodyTy
+    (TyLam var kn body clos) ->
+        local (insertKind var kn) (ty body) >>=
+        return . Forall var kn
 
     (TyApp t1 argTy) -> do
-        -- error (show $ ty t1 ctx kctx)
-        (Forall var kn ty2) <- ty t1 ctx kctx >>= simplify ctx
-        (tyK, _) <- kind argTy kctx
+        (var, kn, ty2) <- ty t1 >>= simplify >>= lift . getForall
+        tyK <- kind argTy
         unless (tyK == kn) (throwError $ WrongKind tyK kn)
         return $ apply (Subst $ Map.singleton var argTy) ty2
 
-    other -> error (show other)
-
-lol ok@(TyArr t11 t12) ctx  = ok
-lol other ctx = error $ show other ++ show ctx
-
-simplify :: TyCtx -> Type -> ThrowsError Type
-simplify ctx (TyVar name) = ctxLookup name ctx
-simplify _ other = return other
+simplify :: Type -> Typing Type
+simplify (TyVar name) = ask >>= lift . tyLookup name
+simplify other = return other
 

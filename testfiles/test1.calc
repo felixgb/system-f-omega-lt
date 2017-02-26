@@ -1,3 +1,4 @@
-id = \X :: *. \x: X. x;
+id = \X::*. \x:X. x;
 
-main = id [Int -> Int] id [Int]
+main = (id [Int -> Int] (id [Int])) 4
+
