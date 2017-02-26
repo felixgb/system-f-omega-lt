@@ -1,1 +1,1 @@
-main = \Y::*. \b:Y. \X::*. \f:X. b [X]
+main = (\Y::*. \b:X. b [Y])

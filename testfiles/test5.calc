@@ -1,9 +1,9 @@
 CBool = forall X::*. X -> X -> X;
--- 
--- tru = \X::*. \t:X. \f:X. t;
--- 
--- fls = \X::*. \t:X. \f:X. f;
--- 
-not = \b:CBool. \X::*. \t:X. \f:X. b [X] f t;
+
+tru = \X::*. \t:X. \f:X. t;
+
+fls = \X::*. \t:X. \f:X. f;
+
+not = \b:forall X::*. X -> X -> X. \X::*. \t:X. \f:X. b [X] f t;
 
 main = not

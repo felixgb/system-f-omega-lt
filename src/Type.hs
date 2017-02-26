@@ -3,7 +3,7 @@ module Type where
 import qualified Data.Map.Strict as Map
 
 import Control.Monad.Except
-import Control.Monad.Reader
+import Control.Monad.RWS
 
 import Kind
 import Syntax
@@ -24,22 +24,26 @@ ty term = case term of
 
     (Var name) -> ask >>= lift . tyLookup name
 
-    (Lam var t1 body clos) ->
-        isKnStar t1 >>
-        local (insertType var t1) (ty body) >>=
-        return . TyArr t1
+    (Lam var t1 body clos) -> do
+        isKnStar t1
+        bodyTy <- local (insertType var t1) (ty body)
+        return $ TyArr t1 bodyTy
 
     (App t1 t2) -> do
-        (t11, t12) <- ty t1 >>= simplify >>= lift . getTyArr
+        -- (t11, t12) <- ty t1 >>= simplify >>= lift . getTyArr
+        ret <- fresh
+        ty1 <- ty t1
         ty2 <- ty t2
-        unless (ty2 == t11) (throwError $ WrongType ty2 t11)
-        return t12
+        tell [(ty1, TyArr ty2 ret)]
+        -- unless (ty2 == t11) (throwError $ WrongType ty2 t11)
+        return ret
 
-    (TyLam var kn body clos) ->
-        local (insertKind var kn) (ty body) >>=
-        return . Forall var kn
+    (TyLam var kn body clos) -> do
+        t <- local (insertKind var kn) (ty body)
+        return $ Forall var kn t
 
     (TyApp t1 argTy) -> do
+        -- Add constraits?
         (var, kn, ty2) <- ty t1 >>= simplify >>= lift . getForall
         tyK <- kind argTy
         unless (tyK == kn) (throwError $ WrongKind tyK kn)

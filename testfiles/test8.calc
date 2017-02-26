@@ -1,0 +1,5 @@
+double = \X::*. \f:X -> X. \a:X. f (f a);
+
+quad = \X::*. double [X -> X] (double [X]);
+
+main = quad

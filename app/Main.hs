@@ -1,7 +1,7 @@
 module Main where
 
 import Control.Monad.Except
-import Control.Monad.Reader
+import Control.Monad.RWS
 import System.Environment
 import Data.Foldable
 
@@ -21,7 +21,9 @@ main = do
         (Left err) -> print err
 
 run :: [(String, Either Type Term)] -> ThrowsError Type
-run defs = runReaderT (typeExprs $ reverse defs) emptyCtx
+run defs = do
+    ran <- evalRWST (typeExprs $ reverse defs) emptyCtx letters
+    return $ fst ran
 
 -- This stuff is really pretty hacky.
 
@@ -43,4 +45,3 @@ typeExprs ((name, rhs) : rest) = do
     ty <- tyIfNotAlready rhs 
     kn <- kind ty
     local (insertBoth name ty kn) (typeExprs rest)
-

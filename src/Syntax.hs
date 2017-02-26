@@ -6,6 +6,7 @@ module Syntax where
 
 import Control.Monad.Except
 import Control.Monad.Reader
+import Control.Monad.RWS
 import Control.Lens
 
 import qualified Data.Map.Strict as Map
@@ -46,15 +47,18 @@ data Type
     | Forall String Kind Type
     | OpLam String Kind Type (Ctx Type)
     | OpApp Type Type
+    | Unknown
     deriving (Show)
 
 instance Substable Type where
+    apply _ TyInt = TyInt
     apply (Subst s) var@(TyVar x) = Map.findWithDefault var x s
     apply s (TyArr t1 t2) = apply s t1 `TyArr` apply s t2
     apply s (Forall var kn ty) = Forall var kn (apply s ty)
     apply s (OpLam var kn ty ctx) = OpLam var kn (apply s ty) ctx
     apply s (OpApp t1 t2) = OpApp (apply s t1) (apply s t2)
 
+    ftv TyInt = Set.empty
     ftv (TyVar name) = Set.singleton name
     ftv (TyArr t1 t2) = ftv t1 `Set.union` ftv t2
     ftv (Forall var kn ty) = ftv ty
@@ -112,7 +116,20 @@ insertKind = ctxInsert kindCtx
 insertBoth name ty kn = insertType name ty . insertKind name kn
     
 
-type Typing = ReaderT Env ThrowsError
+type Constrait = (Type, Type)
+
+type Names = [String]
+
+--type Typing = ReaderT Env WriterT [Constrait] ThrowsError
+type Typing = RWST Env [Constrait] Names ThrowsError
+
+letters = [1..] >>= flip replicateM ['A'..'Z']
+
+fresh :: Typing Type
+fresh = do
+    (v : rest) <- get
+    put rest
+    return $ TyVar v
 
 emptyCtx :: Env
 emptyCtx = Env Map.empty Map.empty
