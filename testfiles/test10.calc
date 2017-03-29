@@ -1,0 +1,10 @@
+List = \X::*. forall R::*. (X -> R -> R) -> R -> R;
+
+nil = \X::*. (\R::*. \c:X -> R -> R. \n:R. n);
+
+-- cons = \X::*. \hd:X. \tl:(List X). (\R::*. \c:X -> R ->R. \n:R. c hd (tl [R] c n));
+cons = \X::*. \hd:X. \tl:((\X::*. forall R::*. (X -> R -> R) -> R -> R) X). (\R::*. \c:X -> R ->R. \n:R. c hd (tl [R] c n));
+
+isnil = \X::*. \l:(\X::*. forall R::*. (X -> R -> R) -> R -> R) X. l [Int] (\hd:X. \tl:Int. 0) 1;
+
+main = isnil

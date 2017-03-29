@@ -1,0 +1,11 @@
+Pair = \X::*. \Y::*. forall R::*. (X -> Y -> R) -> R;
+
+pair = \X::*. \Y::*. \x:X. \y:Y. (\R::*. \p:X -> Y -> R. p x y);
+
+-- fst = \X::*. \Y::*. \p: (forall R::*. (X -> Y -> R) -> R). (p [X]) (\x:X. \y:Y. x);
+-- fst = \X::*. \Y::*. \p: (Pair X) Y. (p [X]) (\x:X. \y:Y. x);
+fst = \X::*. \Y::*. \p: ((\X::*. \Y::*. forall R::*. (X -> Y -> R) -> R) X) Y. (p [X]) (\x:X. \y:Y. x);
+
+intPair = pair [Int] [Int] 1 2;
+
+main = fst [Int] [Int] intPair

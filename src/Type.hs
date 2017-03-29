@@ -18,6 +18,12 @@ getForall :: Type -> ThrowsError (String, Kind, Type)
 getForall (Forall var kn ty) = return (var, kn, ty)
 getForall t = throwError $ NotForall t
 
+s2 :: Type -> Typing Type
+s2 (OpApp (OpLam name kn body _) t2) = s2 $ apply (Subst $ Map.singleton name t2) body
+s2 (OpApp t1 t2) = s2 t2
+s2 fa@(Forall _ _ _) = return fa
+s2 other = error $ show other
+
 ty :: Term -> Typing Type
 ty term = case term of
     (Lit n) -> return TyInt

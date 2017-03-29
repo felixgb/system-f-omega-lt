@@ -48,14 +48,22 @@ data Type
     | OpLam String Kind Type (Ctx Type)
     | OpApp Type Type
     | Unknown
-    deriving (Eq, Show)
+    deriving (Eq)
+
+instance Show Type where
+    show (TyVar name) = name
+    show (TyInt) = "Int"
+    show (TyArr t1 t2) = "(" ++ show t1 ++ " -> " ++ show t2 ++ ")"
+    show (Forall name kn t) = "∀" ++ name ++ "::" ++ show kn ++ ". " ++ show t
+    show (OpLam name kn t _) = "Λ" ++ name ++ "::" ++ show kn ++ "." ++ show t
+    show (OpApp t1 t2) = "(" ++ show t1 ++ " " ++ show t2 ++ ")"
 
 instance Substable Type where
     apply _ TyInt = TyInt
     apply (Subst s) var@(TyVar x) = Map.findWithDefault var x s
     apply s (TyArr t1 t2) = apply s t1 `TyArr` apply s t2
     apply s (Forall var kn ty) = Forall var kn (apply s ty)
-    apply s (OpLam var kn ty ctx) = OpLam var kn (apply s ty) ctx
+    apply s (OpLam var kn ty ctx) = apply s ty
     apply s (OpApp t1 t2) = OpApp (apply s t1) (apply s t2)
 
     ftv TyInt = Set.empty
@@ -68,7 +76,11 @@ instance Substable Type where
 data Kind
     = KnStar
     | KnArr Kind Kind
-    deriving (Eq, Show)
+    deriving (Eq)
+
+instance Show Kind where
+    show KnStar = "*"
+    show (KnArr k1 k2) = "(" ++ show k1 ++ " -> " ++ show k2 ++ ")"
 
 data Env = Env
     { _typeCtx :: Ctx Type
