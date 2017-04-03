@@ -24,7 +24,7 @@ ty term = case term of
 
     (Var name) -> ask >>= lift . tyLookup name
 
-    (Lam var t1 body clos) -> do
+    (Lam var (lt, t1) body) -> do
         isKnStar t1
         bodyTy <- local (insertType var t1) (ty body)
         return $ TyArr t1 bodyTy
@@ -45,6 +45,12 @@ ty term = case term of
         tyK <- kind argTy
         unless (tyK == kn) (throwError $ WrongKind tyK kn)
         return $ apply (Subst $ Map.singleton var argTy) ty2
+
+    (LiLam var term) -> ty term
+
+    (LiApp t1 t2) -> error "not yet implemented"
+
+    (Lt lt) -> error "not yet implemented"
 
 simplify :: Type -> Typing Type
 simplify (TyVar name) = ask >>= lift . tyLookup name

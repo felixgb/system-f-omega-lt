@@ -22,6 +22,7 @@ import Syntax
     int         { TkInt $$ }
     tyInt       { TkTyInt }
     tyVar       { TkTyVar $$ }
+    static      { TkStatic }
     ':'         { TkTyAscribe }
     '::'        { TkKnAscribe }
     '->'        { TkArrow }
@@ -31,6 +32,10 @@ import Syntax
     '('         { TkLParen }
     ')'         { TkRParen }
     ';'         { TkSemi }
+    ','         { TkComma }
+    '<'         { TkLAngle }
+    '>'         { TkRAngle }
+    '\''        { TkPrime }
 
 %right APP
 %%
@@ -42,9 +47,14 @@ Defn : Def                              { [$1] }
 Def : var '=' Term                      { ($1, Right $3) }
     | tyVar '=' Type                    { ($1, Left $3) }
 
-Term : '\\' var ':' Type '.' Term       { Lam $2 $4 $6 Map.empty }
+Litm : '\'' var                         { LiVar $2 }
+     | '<' '>'                          { LiDummy }
+     | static                           { LiStatic }
+
+Term : '\\' var ':' '(' Litm ',' Type ')' '.' Term       { Lam $2 ($5, $7) $10}
      | Juxt                             { $1 }
      | '\\' tyVar '::' Kind '.' Term    { TyLam $2 $4 $6 Map.empty }
+     | '\\''\'' var '.' Term            { LiLam $3 $5 }
 
 Juxt : Juxt Atom                        { App $1 $2 }
      | Term '[' Type ']'                { TyApp $1 $3 }
@@ -53,6 +63,7 @@ Juxt : Juxt Atom                        { App $1 $2 }
 Atom : '(' Term ')'                     { $2 }
      | var                              { Var $1 }
      | int                              { Lit $1 }
+     | Litm                             { Lt $1 }
 
 Type : tyVar                            { TyVar $1 }
      | tyInt                            { TyInt }

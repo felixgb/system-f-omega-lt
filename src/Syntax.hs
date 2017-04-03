@@ -30,14 +30,23 @@ instance Bindable Kind where
 instance Bindable Type where
 instance Bindable Term where
 
+data Lifetime 
+    = LiVar String
+    | LiLit Int
+    | LiStatic
+    | LiDummy
+    deriving (Eq, Show)
+
 data Term
     = Var String
     | Lit Int
-    | Lam String Type Term (Ctx Term)
+    | Lam String (Lifetime, Type) Term
     | App Term Term
     | TyLam String Kind Term (Ctx Type)
     | TyApp Term Type
-    | Brack Term
+    | LiLam String Term
+    | LiApp Term Term
+    | Lt Lifetime
     deriving (Eq, Show)
 
 data Type

@@ -17,6 +17,7 @@ tokens :-
     "--".*              ;
     "Int"               { \s -> TkTyInt }
     forall              { \s -> TkForall }
+    static              { \s -> TkStatic }
     "0"                 { \s -> TkInt (read s) }
     [1-9][$digit]*      { \s -> TkInt (read s) }
     \.                  { \s -> TkDot }
@@ -34,6 +35,10 @@ tokens :-
     \(                  { \s -> TkLParen }
     \)                  { \s -> TkRParen }
     \;                  { \s -> TkSemi }
+    \'                  { \s -> TkPrime }
+    \<                  { \s -> TkPrime }
+    \>                  { \s -> TkPrime }
+    \,                  { \s -> TkComma }
 
 {
 
@@ -55,6 +60,11 @@ data Token
     | TkLParen
     | TkRParen
     | TkSemi 
+    | TkLAngle
+    | TkRAngle
+    | TkPrime
+    | TkComma
+    | TkStatic
     deriving (Eq, Show)
 
 scan = alexScanTokens
