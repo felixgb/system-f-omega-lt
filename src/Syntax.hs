@@ -24,26 +24,48 @@ compose (Subst s1) (Subst s2) = Subst $ Map.map (apply $ Subst s1) s2 `Map.union
 
 type Ctx = Map.Map String
 
+type TypeInfo = (Kind, Lifetime)
+
 class Bindable a where
 
 instance Bindable Kind where
 instance Bindable Type where
 instance Bindable Term where
 
+type Location = Int
+
+data Lifetime
+    = LTLit Int
+    | LTVar String
+    | LTStatic
+    | LTDummy
+    deriving (Eq, Show)
+
+data Qualifier
+    = Imm
+    | Mut
+    deriving (Eq, Show)
+
 data Term
     = Var String
     | Lit Int
     | Lam String Type Term (Ctx Term)
     | App Term Term
-    | TyLam String Kind Term (Ctx Type)
+    | TyLam String TypeInfo Term (Ctx Type)
     | TyApp Term Type
-    | Brack Term
+    | Pointer Lifetime Location
+    | Alloc Lifetime Term
+    | Deref Term
+    | Borrow Lifetime Qualifier Term
     deriving (Eq, Show)
 
 data Type
     = TyVar String
     | TyInt
     | TyArr Type Type
+    | TyPointer Lifetime Type
+    | TyBorrow Lifetime Qualifier Type
+    | TyUnit
     | Forall String Kind Type
     | OpLam String Kind Type (Ctx Type)
     | OpApp Type Type
@@ -57,6 +79,9 @@ instance Show Type where
     show (Forall name kn t) = "∀" ++ name ++ "::" ++ show kn ++ ". " ++ show t
     show (OpLam name kn t _) = "Λ" ++ name ++ "::" ++ show kn ++ "." ++ show t
     show (OpApp t1 t2) = "(" ++ show t1 ++ " " ++ show t2 ++ ")"
+    show TyUnit = "Unit"
+    show (TyPointer lt typ) = "~" ++ show lt ++ " " ++ show typ
+    show (TyBorrow lt qual typ) = "&" ++ show lt ++ " " ++ show qual ++ " " ++ show typ
 
 instance Substable Type where
     apply _ TyInt = TyInt

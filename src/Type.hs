@@ -42,7 +42,7 @@ ty term = case term of
         unless areEq (throwError $ WrongType ty2 t11)
         return t12
 
-    (TyLam var kn body clos) -> do
+    (TyLam var (kn, _) body clos) -> do
         t <- local (insertKind var kn) (ty body)
         return $ Forall var kn t
 
