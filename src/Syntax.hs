@@ -6,7 +6,6 @@ module Syntax where
 
 import Control.Monad.Except
 import Control.Monad.Reader
-import Control.Monad.RWS
 import Control.Lens
 
 import qualified Data.Map.Strict as Map
@@ -83,6 +82,8 @@ data Kind
 data Env = Env
     { _typeCtx :: Ctx Type
     , _kindCtx :: Ctx Kind
+    , _litmCtx :: Ctx Lifetime
+    , _lifetimeLevel :: Int
     } deriving (Show, Eq)
 
 data LangErr
@@ -106,33 +107,22 @@ ctxLookup var ctx = case Map.lookup var ctx of
     Nothing -> throwError $ VarNotFound var
 
 tyLookup name = ctxLookup name . view typeCtx 
+liLookup name = ctxLookup name . view litmCtx 
 knLookup name = ctxLookup name . view kindCtx
 
 ctxInsert ctx name v = over ctx (Map.insert name v)
+nextLiLevel = over lifetimeLevel (+ 1)
 
 insertType = ctxInsert typeCtx
+insertLitm = ctxInsert litmCtx
 insertKind = ctxInsert kindCtx
 
-insertBoth name ty kn = insertType name ty . insertKind name kn
-    
-
-type Constrait = (Type, Type)
-
-type Names = [String]
-
---type Typing = ReaderT Env WriterT [Constrait] ThrowsError
-type Typing = RWST Env [Constrait] Names ThrowsError
-
-letters = [1..] >>= flip replicateM ['A'..'Z']
-
-fresh :: Typing Type
-fresh = do
-    (v : rest) <- get
-    put rest
-    return $ TyVar v
+-- type Typing = ReaderT Env WriterT [Constrait] ThrowsError
+-- type Typing = RWST Env Identity Int ThrowsError
+type Typing = ReaderT Env ThrowsError
 
 emptyCtx :: Env
-emptyCtx = Env Map.empty Map.empty
+emptyCtx = Env Map.empty Map.empty Map.empty 0
 
 parseError x = error $ show x
 

@@ -32,11 +32,11 @@ getMain ctx = case Map.lookup "main" ctx of
     (Just main) -> return main
     Nothing -> throwError NoMain
 
-tyIfNotAlready :: Either Type Term -> Typing Type
+tyIfNotAlready :: Either Type Term -> Typing (Lifetime, Type)
 tyIfNotAlready (Right term) = ty term
 tyIfNotAlready (Left typ) = return typ
 
-typeExprs :: [(String, Either Type Term)] -> Typing Type
+typeExprs :: [(String, Either Type Term)] -> Typing (Lifetime, Type)
 typeExprs [] = do
     envs <- ask 
     lift $ getMain (_typeCtx envs)
