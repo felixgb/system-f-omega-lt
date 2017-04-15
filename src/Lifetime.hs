@@ -1,8 +1,11 @@
 module Lifetime where
-
-import Syntax
-import Control.Monad.Reader
--- instance Ord Lifetime
-
-lifetimeTerm :: Term -> Type Lifetime
-lifetimeTerm term = term 
+-- 
+-- import Syntax
+-- import Control.Monad.Reader
+-- -- instance Ord Lifetime
+-- 
+-- lifetimeTerm :: Term -> Typing Lifetime
+-- lifetimeTerm term = case term of
+--     (Lit n) -> return LiStatic
+--     (Var x) -> ask >>= lifet . liLookup x
+--     (Lam name (li, ty) t1) ->

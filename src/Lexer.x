@@ -29,6 +29,7 @@ tokens :-
     "->"                { \s -> TkArrow }
     "::"                { \s -> TkKnAscribe }
     \:                  { \s -> TkTyAscribe }
+    \&                  { \s -> TkBorrow }
     \*                  { \s -> TkKind }
     \[                  { \s -> TkLSquare }
     \]                  { \s -> TkRSquare }
@@ -36,8 +37,8 @@ tokens :-
     \)                  { \s -> TkRParen }
     \;                  { \s -> TkSemi }
     \'                  { \s -> TkPrime }
-    \<                  { \s -> TkPrime }
-    \>                  { \s -> TkPrime }
+    \<                  { \s -> TkLAngle }
+    \>                  { \s -> TkRAngle }
     \,                  { \s -> TkComma }
 
 {
@@ -65,6 +66,7 @@ data Token
     | TkPrime
     | TkComma
     | TkStatic
+    | TkBorrow
     deriving (Eq, Show)
 
 scan = alexScanTokens

@@ -20,7 +20,7 @@ kind ty = case ty of
 
     (TyVar x) -> ask >>= lift . knLookup x
 
-    (TyArr t1 t2) -> 
+    (TyArr (_, t1) (_, t2)) -> 
         isKnStar t1 >>
         isKnStar t2 >>
         return KnStar

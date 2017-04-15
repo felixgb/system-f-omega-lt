@@ -23,6 +23,7 @@ import Syntax
     tyInt       { TkTyInt }
     tyVar       { TkTyVar $$ }
     static      { TkStatic }
+    '&'         { TkBorrow }
     ':'         { TkTyAscribe }
     '::'        { TkKnAscribe }
     '->'        { TkArrow }
@@ -53,6 +54,7 @@ Litm : '\'' var                         { LiVar $2 }
 
 Term : '\\' var ':' '(' Litm ',' Type ')' '.' Term       { Lam $2 ($5, $7) $10}
      | Juxt                             { $1 }
+     | '&' Term                         { Borrow LiDummy Imm $2 }
      | '\\' tyVar '::' Kind '.' Term    { TyLam $2 $4 $6 Map.empty }
      | '\\''\'' var '.' Term            { LiLam $3 $5 }
 
@@ -71,8 +73,8 @@ Type : tyVar                            { TyVar $1 }
      | forall tyVar '::' Kind '.' Type  { Forall $2 $4 $6 }
      | '\\' tyVar '::' Kind '.' Type    { OpLam $2 $4 $6 Map.empty }
      | Type Type                        { OpApp $1 $2 }
+     | '&' Type                         { TyBorrow $2 }
      | '(' Type ')'                     { $2 }
-
 
 Kind : '*'                              { KnStar }
      | Kind '->' Kind                   { KnArr $1 $3 }

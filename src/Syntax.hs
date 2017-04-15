@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 
@@ -30,6 +31,9 @@ instance Bindable Kind where
 instance Bindable Type where
 instance Bindable Term where
 instance Bindable Lifetime where
+instance Bindable (Lifetime, Type) where
+
+data Qual = Imm | Mut deriving (Eq, Show)
 
 data Lifetime 
     = LiVar String
@@ -47,13 +51,15 @@ data Term
     | TyApp Term Type
     | LiLam String Term
     | LiApp Term Term
+    | Borrow Lifetime Qual Term
     | Lt Lifetime
     deriving (Eq, Show)
 
 data Type
     = TyVar String
     | TyInt
-    | TyArr Type Type
+    | TyBorrow Type
+    | TyArr (Lifetime, Type) (Lifetime, Type)
     | Forall String Kind Type
     | OpLam String Kind Type (Ctx Type)
     | OpApp Type Type
@@ -62,14 +68,14 @@ data Type
 instance Substable Type where
     apply _ TyInt = TyInt
     apply (Subst s) var@(TyVar x) = Map.findWithDefault var x s
-    apply s (TyArr t1 t2) = apply s t1 `TyArr` apply s t2
+    apply s (TyArr (l1, t1) (l2, t2)) = TyArr (l1, apply s t1) (l2, apply s t2)
     apply s (Forall var kn ty) = Forall var kn (apply s ty)
     apply s (OpLam var kn ty ctx) = OpLam var kn (apply s ty) ctx
     apply s (OpApp t1 t2) = OpApp (apply s t1) (apply s t2)
 
     ftv TyInt = Set.empty
     ftv (TyVar name) = Set.singleton name
-    ftv (TyArr t1 t2) = ftv t1 `Set.union` ftv t2
+    ftv (TyArr (l1, t1) (l2, t2)) = ftv t1 `Set.union` ftv t2
     ftv (Forall var kn ty) = ftv ty
     ftv (OpLam var kn ty clos) = ftv ty `Set.difference` Set.singleton var
     ftv (OpApp t1 t2) = ftv t1 `Set.union` ftv t2
@@ -80,7 +86,7 @@ data Kind
     deriving (Eq, Show)
 
 data Env = Env
-    { _typeCtx :: Ctx Type
+    { _typeCtx :: Ctx (Lifetime, Type)
     , _kindCtx :: Ctx Kind
     , _litmCtx :: Ctx Lifetime
     , _lifetimeLevel :: Int
@@ -95,6 +101,7 @@ data LangErr
     | WrongType Type Type
     | NotTyArr Type
     | NotForall Type
+    | LifetimeError Term
     deriving (Eq, Show)
 
 type ThrowsError = Except LangErr
@@ -117,8 +124,6 @@ insertType = ctxInsert typeCtx
 insertLitm = ctxInsert litmCtx
 insertKind = ctxInsert kindCtx
 
--- type Typing = ReaderT Env WriterT [Constrait] ThrowsError
--- type Typing = RWST Env Identity Int ThrowsError
 type Typing = ReaderT Env ThrowsError
 
 emptyCtx :: Env
