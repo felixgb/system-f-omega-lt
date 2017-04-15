@@ -36,7 +36,6 @@ tyIfNotAlready :: Either Type Term -> Typing Type
 tyIfNotAlready (Right term) = ty term
 tyIfNotAlready (Left typ) = return typ
 
-
 typeExprs :: [(String, Either Type Term)] -> Typing Type
 typeExprs [] = do
     envs <- ask 

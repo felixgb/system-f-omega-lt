@@ -30,6 +30,7 @@ class Bindable a where
 instance Bindable Kind where
 instance Bindable Type where
 instance Bindable Term where
+instance Bindable Lifetime where
 
 data Lifetime 
     = LiVar String
