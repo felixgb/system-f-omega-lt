@@ -22,6 +22,7 @@ class Substable a where
 compose :: Substable a => Subst a -> Subst a -> Subst a
 compose (Subst s1) (Subst s2) = Subst $ Map.map (apply $ Subst s1) s2 `Map.union` s1
 
+-- All contexts are a mapping of var names to values
 type Ctx = Map.Map String
 
 class Bindable a where
@@ -56,7 +57,6 @@ data Type
     | Forall String Kind Type
     | OpLam String Kind Type (Ctx Type)
     | OpApp Type Type
-    | Unknown
     deriving (Eq, Show)
 
 instance Substable Type where
