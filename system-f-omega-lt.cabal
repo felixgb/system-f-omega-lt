@@ -19,6 +19,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Lib
                      , Lexer
+                     , Run
                      , Syntax
                      , Parser
                      , Kind
@@ -46,6 +47,9 @@ test-suite system-f-omega-lt-test
   main-is:             Spec.hs
   build-depends:       base
                      , system-f-omega-lt
+                     , hspec
+                     , mtl
+                     , containers
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
 
